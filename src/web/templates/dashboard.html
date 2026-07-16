@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧘 FocusGuardian Dashboard</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    
+    <style>
+        :root {
+            --bg-dark: #0f0f1a;
+            --bg-card: #1a1a2e;
+            --bg-card-hover: #22223a;
+            --border-color: #2a2a3e;
+            --text-primary: #e0e0e0;
+            --text-muted: #8888aa;
+            --color-good: #00ff88;
+            --color-warning: #ffdd00;
+            --color-critical: #ff0044;
+            --color-info: #00aaff;
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 12px;
+        }
+        
+        .glass-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(255,255,255,0.1);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+        
+        .stat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: default;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+        
+        .stat-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        
+        #video-feed {
+            width: 100%;
+            border-radius: 12px;
+            background: #000;
+            max-height: 70vh;
+            object-fit: contain;
+        }
+        
+        .status-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 20px rgba(0,255,0,0.2);
+            transition: all 0.3s;
+        }
+        
+        .status-good { background: var(--color-good); box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+        .status-warning { background: var(--color-warning); box-shadow: 0 0 20px rgba(255,221,0,0.4); animation: pulse 1s infinite; }
+        .status-critical { background: var(--color-critical); box-shadow: 0 0 20px rgba(255,0,68,0.4); animation: pulse 0.5s infinite; }
+        .status-offline { background: #555; box-shadow: none; }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.7; }
+        }
+        
+        .btn-glass {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            transition: all 0.3s;
+        }
+        
+        .btn-glass:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.2);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+        
+        .btn-glass-success:hover { border-color: var(--color-good); color: var(--color-good); }
+        .btn-glass-warning:hover { border-color: var(--color-warning); color: var(--color-warning); }
+        .btn-glass-danger:hover { border-color: var(--color-critical); color: var(--color-critical); }
+        .btn-glass-info:hover { border-color: var(--color-info); color: var(--color-info); }
+        
+        .badge-fps {
+            background: rgba(0,255,136,0.15);
+            color: var(--color-good);
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+        
+        #voice-overlay {
+            border-radius: 0 0 12px 12px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.8));
+        }
+        
+        .toast-custom {
+            background: var(--bg-card);
+            border-left: 4px solid var(--color-info);
+            border-radius: 8px;
+            color: var(--text-primary);
+            padding: 12px 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+            max-width: 400px;
+        }
+        
+        .lang-switch {
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+        .lang-switch:hover {
+            background: rgba(255,255,255,0.15);
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row mb-3">
+            <div class="col-12">
+                <div class="glass-card p-3">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+                        <div>
+                            <h2 class="mb-0"><span style="color: var(--color-good);">🧘</span> FocusGuardian</h2>
+                            <small class="text-muted" id="status-text" data-i18n="initializing">Инициализация...</small>
+                        </div>
+                        <div class="d-flex flex-wrap gap-2 align-items-center">
+                            <span class="lang-switch me-2" onclick="toggleLanguage()" id="lang-btn">RU</span>
+                            <span class="badge-fps" id="fps-badge">📹 0 FPS</span>
+                            <span class="badge bg-secondary" id="uptime-badge">⏱️ 0м</span>
+                            <button class="btn btn-sm btn-glass btn-glass-warning" onclick="togglePause()" id="pause-btn">
+                                <i class="fas fa-pause"></i> <span data-i18n="btn_pause">Пауза</span>
+                            </button>
+                            <button class="btn btn-sm btn-glass btn-glass-info" onclick="generateReport()">
+                                <i class="fas fa-file-alt"></i> <span data-i18n="btn_report">Отчет</span>
+                            </button>
+                            <button class="btn btn-sm btn-glass btn-glass-success" onclick="exportData()">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8 col-md-12 mb-3">
+                <div class="glass-card p-0 position-relative overflow-hidden">
+                    <img id="video-feed" src="/api/stream" alt="Video Feed">
+                    
+                    <div class="position-absolute top-0 end-0 p-3">
+                        <span class="status-dot status-offline" id="status-dot"></span>
+                    </div>
+                    
+                    <div id="voice-overlay" class="position-absolute bottom-0 start-0 w-100 p-3" style="display: none;">
+                        <div class="text-center text-white" id="voice-text">
+                            <i class="fas fa-microphone fa-pulse me-2"></i>
+                            <span data-i18n="listening">Слушаю...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-12">
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-value" id="posture-status">✅</div>
+                            <div class="stat-label" data-i18n="label_posture">Осанка</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-value" id="blink-count" style="color: var(--color-info);">0</div>
+                            <div class="stat-label" data-i18n="label_blinks">Моргания</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-value" id="slouch-count" style="color: var(--color-warning);">0</div>
+                            <div class="stat-label" data-i18n="label_slouches">Наклоны</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card">
+                            <div class="stat-value" id="critical-count" style="color: var(--color-critical);">0</div>
+                            <div class="stat-label" data-i18n="label_critical">Критические</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card p-2 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                        <small class="text-muted"><i class="fas fa-chart-line me-1"></i><span data-i18n="chart_title">История осанки</span></small>
+                        <small class="text-muted" id="chart-time" data-i18n="chart_limit">Последние 50</small>
+                    </div>
+                    <canvas id="posture-chart" height="120"></canvas>
+                </div>
+
+                <div class="glass-card p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small><i class="fas fa-microphone me-1"></i><span data-i18n="voice_commands">Голосовые команды</span></small>
+                        <span class="badge bg-secondary" id="voice-status">Offline</span>
+                    </div>
+                    <div class="row g-1">
+                        <div class="col-4"><button class="btn btn-sm btn-glass w-100" onclick="sendCommand('status')"><i class="fas fa-info-circle"></i> <span data-i18n="cmd_status">Статус</span></button></div>
+                        <div class="col-4"><button class="btn btn-sm btn-glass btn-glass-warning w-100" onclick="sendCommand('pause')"><i class="fas fa-pause"></i> <span data-i18n="cmd_pause">Пауза</span></button></div>
+                        <div class="col-4"><button class="btn btn-sm btn-glass btn-glass-success w-100" onclick="sendCommand('resume')"><i class="fas fa-play"></i> <span data-i18n="cmd_resume">Старт</span></button></div>
+                        <div class="col-4"><button class="btn btn-sm btn-glass btn-glass-info w-100" onclick="sendCommand('report')"><i class="fas fa-file-alt"></i> <span data-i18n="cmd_report">Отчет</span></button></div>
+                        <div class="col-4"><button class="btn btn-sm btn-glass btn-glass-danger w-100" onclick="sendCommand('reset')"><i class="fas fa-redo"></i> <span data-i18n="cmd_reset">Сброс</span></button></div>
+                        <div class="col-4"><button class="btn btn-sm btn-glass w-100" onclick="sendCommand('help')"><i class="fas fa-question-circle"></i> <span data-i18n="cmd_help">Инфо</span></button></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="text-center text-muted small">
+                    <i class="fas fa-shield-alt me-1"></i>
+                    <span data-i18n="privacy_note">Все вычисления производятся локально. Данные не передаются в облако.</span>
+                    <span class="mx-2">|</span>
+                    <span id="session-info">Сессия: загрузка...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // CONFIGURATION & TRANSLATIONS
+        // ============================================================
+        const CONFIG = {
+            socketURL: window.location.origin,
+            maxHistory: 50,
+            pollInterval: 1500
+        };
+
+        const TRANSLATIONS = {
+            ru: {
+                initializing: 'Инициализация...',
+                connected: '🟢 Подключено',
+                disconnected: '🔴 Отключено',
+                btn_pause: 'Пауза',
+                btn_resume: 'Продолжить',
+                btn_report: 'Отчет',
+                listening: 'Слушаю...',
+                label_posture: 'Осанка',
+                label_blinks: 'Моргания',
+                label_slouches: 'Наклоны',
+                label_critical: 'Критические',
+                chart_title: 'История осанки',
+                chart_limit: 'Последние 50',
+                voice_commands: 'Голосовые команды',
+                cmd_status: 'Статус',
+                cmd_pause: 'Пауза',
+                cmd_resume: 'Старт',
+                cmd_report: 'Отчет',
+                cmd_reset: 'Сброс',
+                cmd_help: 'Инфо',
+                privacy_note: 'Все вычисления производятся локально. Данные не передаются в облако.',
+                session_prefix: 'Сессия: ',
+                no_face: '👤 Нет лица',
+                warning: '🤔 Внимание',
+                critical: '⚠️ Сутулость!',
+                good: '✅ Отлично'
+            },
+            en: {
+                initializing: 'Initializing...',
+                connected: '🟢 Connected',
+                disconnected: '🔴 Disconnected',
+                btn_pause: 'Pause',
+                btn_resume: 'Resume',
+                btn_report: 'Report',
+                listening: 'Listening...',
+                label_posture: 'Posture',
+                label_blinks: 'Blinks',
+                label_slouches: 'Slouches',
+                label_critical: 'Critical',
+                chart_title: 'Posture History',
+                chart_limit: 'Last 50',
+                voice_commands: 'Voice Commands',
+                cmd_status: 'Status',
+                cmd_pause: 'Pause',
+                cmd_resume: 'Resume',
+                cmd_report: 'Report',
+                cmd_reset: 'Reset',
+                cmd_help: 'Help',
+                privacy_note: 'All processing is local. No data sent to cloud.',
+                session_prefix: 'Session: ',
+                no_face: '👤 No face',
+                warning: '🤔 Warning',
+                critical: '⚠️ Critical!',
+                good: '✅ Good'
+            }
+        };
+
+        // ============================================================
+        // STATE
+        // ============================================================
+        let socket = null;
+        let chart = null;
+        let currentLang = 'ru';
+        let pollTimer = null;
+        let lastUpdateTime = 0;
+
+        // ============================================================
+        // DOM REFS
+        // ============================================================
+        const $ = id => document.getElementById(id);
+        const statusText = $('status-text');
+        const statusDot = $('status-dot');
+        const fpsBadge = $('fps-badge');
+        const uptimeBadge = $('uptime-badge');
+        const pauseBtn = $('pause-btn');
+        const postureStatus = $('posture-status');
+        const blinkCount = $('blink-count');
+        const slouchCount = $('slouch-count');
+        const criticalCount = $('critical-count');
+        const voiceStatus = $('voice-status');
+        const voiceOverlay = $('voice-overlay');
+        const voiceText = $('voice-text');
+        const sessionInfo = $('session-info');
+        const langBtn = $('lang-btn');
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧘 FocusGuardian Dashboard v2.1');
+            applyLanguage();
+            initChart();
+            loadHistory();
+            initSocket();
+            
+            // Polling plays as a smart fallback only when socket is inactive
+            pollTimer = setInterval(smartPoll, CONFIG.pollInterval);
+        });
+
+        // ============================================================
+        // MULTI-LANGUAGE ENGINE
+        // ============================================================
+        function toggleLanguage() {
+            currentLang = currentLang === 'ru' ? 'en' : 'ru';
+            langBtn.textContent = currentLang.toUpperCase();
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const t = TRANSLATIONS[currentLang];
+            document.querySelectorAll('[data-i18n]').forEach(element => {
+                const key = element.getAttribute('data-i18n');
+                if (t[key]) {
+                    element.textContent = t[key];
+                }
+            });
+        }
+
+        // ============================================================
+        // SOCKET.IO (Main stream channel)
+        // ============================================================
+        function initSocket() {
+            socket = io(CONFIG.socketURL, {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                timeout: 5000
+            });
+
+            socket.on('connect', function() {
+                console.log('✅ Socket connected');
+                statusText.textContent = TRANSLATIONS[currentLang].connected;
+                statusText.style.color = 'var(--color-good)';
+                socket.emit('subscribe', { channels: ['status'] });
+            });
+
+            socket.on('disconnect', function() {
+                console.log('❌ Socket disconnected');
+                statusText.textContent = TRANSLATIONS[currentLang].disconnected;
+                statusText.style.color = 'var(--color-critical)';
+            });
+
+            socket.on('status_update', function(data) {
+                lastUpdateTime = Date.now();
+                updateDashboard(data);
+            });
+
+            socket.on('command_result', function(data) {
+                if (data.status) {
+                    showToast('Command: ' + data.status, 'success');
+                }
+            });
+        }
+
+        // ============================================================
+        // SMART FALLBACK POLLING
+        // ============================================================
+        function smartPoll() {
+            // If the socket has not updated state in the last 2 seconds, run standard API fetch
+            if (!socket || !socket.connected || (Date.now() - lastUpdateTime > 2000)) {
+                fetch('/api/status')
+                    .then(r => r.json())
+                    .then(data => {
+                        updateDashboard(data);
+                    })
+                    .catch(() => {});
+            }
+        }
+
+        // ============================================================
+        // CHART DEFINITION
+        // ============================================================
+        function initChart() {
+            const ctx = document.getElementById('posture-chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Spine (Спина)',
+                            data: [],
+                            borderColor: '#00ff88',
+                            backgroundColor: 'rgba(0,255,136,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 1.5,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Neck (Шея)',
+                            data: [],
+                            borderColor: '#ffdd00',
+                            backgroundColor: 'rgba(255,221,0,0.08)',
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 1.5,
+                            borderWidth: 2,
+                            borderDash: [4, 4]
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#8888aa',
+                                font: { size: 9 },
+                                boxWidth: 12,
+                                padding: 8
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#555', font: { size: 8 }, maxTicksLimit: 8 },
+                            grid: { color: 'rgba(255,255,255,0.03)' }
+                        },
+                        y: {
+                            min: 0,
+                            max: 35,
+                            ticks: { color: '#555', font: { size: 8 } },
+                            grid: { color: 'rgba(255,255,255,0.03)' }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'nearest'
+                    }
+                }
+            });
+        }
+
+        // ============================================================
+        // DASHBOARD UPDATE LOGIC
+        // ============================================================
+        function updateDashboard(data) {
+            const posture = data.posture || {};
+            const eyes = data.eyes || {};
+            const session = data.session || {};
+            const t = TRANSLATIONS[currentLang];
+
+            // Status indicator update
+            if (!data.face_detected) {
+                statusDot.className = 'status-dot status-offline';
+            } else if (posture.is_slouching && posture.severity === 'critical') {
+                statusDot.className = 'status-dot status-critical';
+            } else if (posture.is_slouching) {
+                statusDot.className = 'status-dot status-warning';
+            } else {
+                statusDot.className = 'status-dot status-good';
+            }
+
+            // Posture Status Text localization
+            if (!data.face_detected) {
+                postureStatus.textContent = t.no_face;
+                postureStatus.style.color = '#666';
+            } else if (posture.is_slouching) {
+                postureStatus.textContent = posture.severity === 'critical' ? t.critical : t.warning;
+                postureStatus.style.color = posture.severity === 'critical' ? 'var(--color-critical)' : 'var(--color-warning)';
+            } else {
+                postureStatus.textContent = t.good;
+                postureStatus.style.color = 'var(--color-good)';
+            }
+
+            // Apply statistics
+            blinkCount.textContent = eyes.blinks || 0;
+            slouchCount.textContent = session.slouches || 0;
+            criticalCount.textContent = session.critical_slouches || 0;
+
+            // Apply FPS badge
+            fpsBadge.textContent = `📹 ${data.fps || 0} FPS`;
+
+            // FIX: Correct uptime calculation using seconds * 1000 parsing
+            const startTimeMs = new Date(data.timestamp * 1000).getTime();
+            const uptimeMinutes = Math.max(0, Math.floor((Date.now() - startTimeMs) / 60000));
+            uptimeBadge.textContent = `⏱️ ${uptimeMinutes}${currentLang === 'ru' ? 'м' : 'm'}`;
+
+            // Apply current session string
+            sessionInfo.textContent = `${t.session_prefix}${data.session_id || 'active'}`;
+
+            // Push status packet to the chart securely
+            updateChart(data);
+        }
+
+        // ============================================================
+        // CHART RENDERING ENGINE
+        // ============================================================
+        let lastChartTimeStr = '';
+        function updateChart(data) {
+            if (!chart) return;
+            
+            const posture = data.posture || {};
+            const timeStr = new Date().toLocaleTimeString();
+            
+            // Prevent duplicate entries on chart within the same second
+            if (timeStr === lastChartTimeStr) return;
+            lastChartTimeStr = timeStr;
+            
+            chart.data.labels.push(timeStr);
+            chart.data.datasets[0].data.push(posture.angle || 0);
+            chart.data.datasets[1].data.push(posture.neck_angle || 0);
+            
+            if (chart.data.labels.length > CONFIG.maxHistory) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+                chart.data.datasets[1].data.shift();
+            }
+            
+            chart.update('none');
+        }
+
+        // ============================================================
+        // REST HISTORY PACKET RETRIEVAL
+        // ============================================================
+        function loadHistory() {
+            fetch('/api/history?limit=50')
+                .then(r => r.json())
+                .then(data => {
+                    if (data.length > 0 && chart) {
+                        chart.data.labels = [];
+                        chart.data.datasets[0].data = [];
+                        chart.data.datasets[1].data = [];
+
+                        data.reverse().forEach(item => {
+                            // Parse timestamps correctly
+                            const time = new Date(item.timestamp * 1000).toLocaleTimeString();
+                            chart.data.labels.push(time);
+                            chart.data.datasets[0].data.push(item.spine_angle || 0);
+                            chart.data.datasets[1].data.push(item.neck_angle || 0);
+                        });
+                        
+                        if (chart.data.labels.length > CONFIG.maxHistory) {
+                            chart.data.labels = chart.data.labels.slice(-CONFIG.maxHistory);
+                            chart.data.datasets[0].data = chart.data.datasets[0].data.slice(-CONFIG.maxHistory);
+                            chart.data.datasets[1].data = chart.data.datasets[1].data.slice(-CONFIG.maxHistory);
+                        }
+                        chart.update();
+                    }
+                })
+                .catch(() => {});
+        }
+
+        // ============================================================
+        // INTERACTIVE SYSTEM CONTROL
+        // ============================================================
+        function sendCommand(command) {
+            fetch('/api/voice/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: command })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.status === 'command_processed') {
+                    showToast(`🎤 Command: ${command}`, 'success');
+                    showVoiceOverlay(command);
+                } else if (data.error) {
+                    showToast(`❌ ${data.error}`, 'danger');
+                }
+            })
+            .catch(() => showToast('❌ Command failed', 'danger'));
+        }
+
+        function togglePause() {
+            const isCurrentlyPaused = pauseBtn.innerHTML.includes('Resume') || pauseBtn.innerHTML.includes('Продолжить');
+            const cmd = isCurrentlyPaused ? 'resume' : 'pause';
+            
+            fetch('/api/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: cmd })
+            })
+            .then(r => r.json())
+            .then(data => {
+                const t = TRANSLATIONS[currentLang];
+                if (data.status === 'paused') {
+                    pauseBtn.innerHTML = `<i class="fas fa-play"></i> ${t.btn_resume}`;
+                    showToast('⏸️ Paused', 'warning');
+                } else if (data.status === 'resumed') {
+                    pauseBtn.innerHTML = `<i class="fas fa-pause"></i> ${t.btn_pause}`;
+                    showToast('▶️ Resumed', 'success');
+                }
+            });
+        }
+
+        function generateReport() {
+            fetch('/api/command', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ command: 'report' })
+            })
+            .then(() => showToast('📊 Report generated', 'info'));
+        }
+
+        function exportData() {
+            window.location.href = '/api/export';
+            showToast('📥 Downloading...', 'info');
+        }
+
+        // ============================================================
+        // VOICE RECOGNITION OVERLAY
+        // ============================================================
+        function showVoiceOverlay(text) {
+            voiceOverlay.style.display = 'block';
+            voiceText.innerHTML = `<i class="fas fa-microphone fa-pulse me-2"></i> Command: ${text}`;
+            setTimeout(() => {
+                voiceOverlay.style.display = 'none';
+            }, 1500);
+        }
+
+        // ============================================================
+        // TOAST NOTIFIER
+        // ============================================================
+        function showToast(message, type = 'info') {
+            const colors = {
+                success: '#00ff88',
+                info: '#00aaff',
+                warning: '#ffdd00',
+                danger: '#ff0044'
+            };
+            const color = colors[type] || colors.info;
+            
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = '9999';
+            toast.innerHTML = `
+                <div class="toast-custom" style="border-left-color: ${color};">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'} me-2" 
+                       style="color: ${color};"></i>
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        // ============================================================
+        // KEYBOARD HOTKEYS
+        // ============================================================
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && e.key === ' ') {
+                e.preventDefault();
+                togglePause();
+            }
+            if (e.ctrlKey && e.key === 'r') {
+                e.preventDefault();
+                generateReport();
+            }
+        });
+
+        // ============================================================
+        // MEMORY CLEANUP
+        // ============================================================
+        window.addEventListener('beforeunload', function() {
+            if (socket) socket.disconnect();
+            if (pollTimer) clearInterval(pollTimer);
+        });
+
+        console.log('✅ Dashboard ready');
+    </script>
+</body>
+</html>
