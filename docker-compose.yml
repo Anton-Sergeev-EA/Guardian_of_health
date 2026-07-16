@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  focus-guardian:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: focus-guardian
+    
+    # Required for direct hardware access (webcam and mic).
+    privileged: true
+    
+    # Share host hardware devices with the container.
+    devices:
+      - /dev/video0:/dev/video0  # Webcam.
+      - /dev/snd:/dev/snd        # Sound card.
+    
+    ports:
+      - "5000:5000"
+    
+    volumes:
+      # Persistent storage for SQLite database logs.
+      # Note: Ensure ./logs directory on host is owned by UID 1000 (chown 1000:1000 ./logs).
+      - ./logs:/home/guardian/.focus_guardian
+      
+      # X11 Display sockets for PyQt6 system tray UI.
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ~/.Xauthority:/home/guardian/.Xauthority:ro
+      
+      # PulseAudio socket connection for offline Vosk voice controls.
+      - ${XDG_RUNTIME_DIR}/pulse/native:${XDG_RUNTIME_DIR}/pulse/native
+    
+    environment:
+      - DISPLAY=${DISPLAY}
+      - QT_X11_NO_MITSHM=1
+      - XAUTHORITY=/home/guardian/.Xauthority
+      # Redirect container audio requests to host's PulseAudio socket.
+      - PULSE_SERVER=unix:${XDG_RUNTIME_DIR}/pulse/native
+    
+    # Grant container membership in host system groups.
+    group_add:
+      - video
+      - audio
+    
+    # Keep STDIN open and allocate a pseudo-TTY for console logging interaction.
+    stdin_open: true
+    tty: true
+    
+    restart: unless-stopped
+    
+    # Manage CPU and RAM utilization for smooth background execution.
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 2G
+        reservations:
+          cpus: '0.5'
+          memory: 500M
