@@ -74,7 +74,8 @@ class WebConfig:
 @dataclass
 class DatabaseConfig:
     enabled: bool = True
-    path: str = "~/.focus_guardian/logs.db"
+    # Path aligned with Docker volume mount to avoid write permission errors
+    path: str = "/home/guardian/.focus_guardian/logs.db"
     retention_days: int = 30
 
 
@@ -90,7 +91,8 @@ class NotificationsConfig:
 class LoggingConfig:
     level: str = "INFO"
     format: str = "json"
-    file: str = "~/.focus_guardian/logs/guardian.log"
+    # Aligned path to write logs inside the shared persistence mount directory
+    file: str = "/home/guardian/.focus_guardian/guardian.log"
     max_size: int = 10
     backup_count: int = 5
 
@@ -164,7 +166,7 @@ class ConfigLoader:
         },
         'database': {
             'enabled': True,
-            'path': '~/.focus_guardian/logs.db',
+            'path': '/home/guardian/.focus_guardian/logs.db',
             'retention_days': 30
         },
         'notifications': {
@@ -176,7 +178,7 @@ class ConfigLoader:
         'logging': {
             'level': 'INFO',
             'format': 'json',
-            'file': '~/.focus_guardian/logs/guardian.log',
+            'file': '/home/guardian/.focus_guardian/guardian.log',
             'max_size': 10,
             'backup_count': 5
         }
@@ -281,3 +283,4 @@ def reload_config():
     global _config
     loader = ConfigLoader(Path('config.yaml'))
     _config = loader.load()
+    
