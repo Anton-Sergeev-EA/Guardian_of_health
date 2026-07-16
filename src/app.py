@@ -2,6 +2,11 @@
 FocusGuardian - Main Application Orchestrator.
 """
 
+"""
+FocusGuardian - Main Application Orchestrator.
+Optimized for decoupled high-speed frame capture, async ML processing, and non-blocking DB writes.
+"""
+
 import sys
 import time
 import json
@@ -76,8 +81,8 @@ class FocusGuardian:
         self.inference_skip = 2
         self.face_detected = False
         
-        # Threading Queues (Decoupling Capture and Processing)
-        self.frame_queue = queue.Queue(maxsize=3)  # Keeping size small to ensure lowest latency
+        # Threading Queues
+        self.frame_queue = queue.Queue(maxsize=3)  # Keep size small to prevent delay accumulation
         self.db_queue = queue.Queue()
         
         # Latest results.
@@ -119,7 +124,7 @@ class FocusGuardian:
         self.fps_counter = 0
         self.fps_timer = time.time()
         
-        # Start Thread Pool
+        # Automatically spawn thread pool
         self._start_threads()
         
         print("[INIT] FocusGuardian ready")
@@ -176,7 +181,7 @@ class FocusGuardian:
         print(f"[DB] Logging to: {self.db_path}")
     
     def _init_voice(self):
-        """Initialize voice commander."""
+        """Initialize voice commander"""
         try:
             self.voice = VoiceCommander(language='ru')
             if self.voice.is_available():
@@ -191,15 +196,12 @@ class FocusGuardian:
 
     def _start_threads(self):
         """Spawns dedicated background worker threads."""
-        # Frame Processing worker thread.
         self.processing_thread = threading.Thread(target=self.processing_loop, daemon=True)
         self.processing_thread.start()
 
-        # Database async writer thread.
         self.db_writer_thread = threading.Thread(target=self.db_writer_loop, daemon=True)
         self.db_writer_thread.start()
         
-        # Frame Grabber thread
         self.capture_thread = threading.Thread(target=self.capture_loop, daemon=True)
         self.capture_thread.start()
     
@@ -238,13 +240,13 @@ class FocusGuardian:
             # Safe push to processing queue without blocking the capture loop
             if self.frame_queue.full():
                 try:
-                    self.frame_queue.get_nowait()  # Drop oldest frame to maintain realtime state
+                    self.frame_queue.get_nowait()  # Drop oldest frame to ensure realtime state
                 except queue.Empty:
                     pass
             
             self.frame_queue.put(self.last_frame)
             
-            # Precise CPU control (Capping at ~60 FPS)
+            # Precise CPU control (Capping at ~60 FPS max)
             elapsed = (time.perf_counter() - loop_start) * 1000
             if elapsed < 15:
                 time.sleep((15 - elapsed) / 1000)
@@ -256,7 +258,6 @@ class FocusGuardian:
         print("[THREAD] Processing loop started")
         while self.running:
             try:
-                # Wait for a fresh frame from the queue (blocks until available)
                 frame = self.frame_queue.get(timeout=1.0)
                 self.frame_counter += 1
                 
@@ -337,7 +338,7 @@ class FocusGuardian:
                 )
                 self.session_data['breaks_taken'] += 1
                 
-            # Async database logging every 10 seconds (approx 300 frames)
+            # Queue DB write every 10 seconds (approx 300 processed frames)
             if self.frame_counter % (10 * 30) == 0:
                 self._queue_db_log()
                 
@@ -368,7 +369,7 @@ class FocusGuardian:
             pass
     
     def _queue_db_log(self):
-        """Saves telemetry variables and places them safely in the DB queue."""
+        """Assembles log metrics and places them in queue for the writer thread."""
         if not self.conn:
             return
         
@@ -386,12 +387,11 @@ class FocusGuardian:
         self.db_queue.put(log_payload)
 
     def db_writer_loop(self):
-        """Dedicated writer thread to prevent SQLite I/O bottlenecks on processing streams."""
+        """Asynchronously write posture logs to DB."""
         print("[THREAD] Async DB Writer started")
         while self.running:
             try:
                 payload = self.db_queue.get(timeout=2.0)
-                
                 self.conn.execute('''
                     INSERT INTO posture_logs 
                     (timestamp, spine_angle, neck_angle, shoulder_angle, 
@@ -492,7 +492,7 @@ class FocusGuardian:
         }
     
     def pause_monitoring(self):
-        """Pause monitoring safely without spawning/terminating system threads."""
+        """Pause monitoring safely without killing threads."""
         self.paused = True
         print("[PAUSE] Monitoring paused")
     
@@ -538,8 +538,7 @@ class FocusGuardian:
         # Log final data.
         if self.conn:
             self._queue_db_log()
-            # Wait briefly for writer to commit remaining items
-            time.sleep(0.5)
+            time.sleep(0.5)  # Wait for writer thread to commit
             self.conn.close()
         
         # Stop voice.
@@ -556,3 +555,4 @@ class FocusGuardian:
         self.engine.stop()
         
         print("[SHUTDOWN] FocusGuardian stopped.")
+        
