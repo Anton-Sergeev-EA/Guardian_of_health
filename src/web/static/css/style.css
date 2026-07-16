@@ -1,0 +1,130 @@
+/* ==========================================================================
+   FocusGuardian Dashboard Custom Stylesheet
+   ========================================================================== */
+
+/* Modern scrollbar isolation to prevent layout shift (CLS) and Bootstrap conflicts */
+html {
+    scrollbar-gutter: stable;
+}
+
+body {
+    background-color: var(--bg-dark);
+    overflow-y: auto;
+}
+
+/* Scrollbar styling restricted to dark mode theme context */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: #0f0f1a;
+    border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #2a2a3e;
+    border-radius: 3px;
+    transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #3a3a5e;
+}
+
+/* ==========================================================================
+   Animations & Transitions (GPU Optimized)
+   ========================================================================== */
+
+/* Hardware-accelerated skeleton shimmer loader */
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.shimmer-container {
+    position: relative;
+    overflow: hidden;
+    background: #1a1a2e;
+    border-radius: 8px;
+}
+
+.shimmer-container::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.05) 20%,
+        rgba(255, 255, 255, 0.1) 60%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 1.6s infinite;
+    content: '';
+    will-change: transform;
+}
+
+/* Smooth UI layout state transitions */
+.glass-card, .stat-card, .btn-glass, .status-dot {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ==========================================================================
+   Interactive Tooltips
+   ========================================================================== */
+
+.tooltip-custom {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-custom .tooltip-text {
+    visibility: hidden;
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+    text-align: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border: 1px solid #2a2a3e;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    
+    /* Position tooltip above the element */
+    position: absolute;
+    z-index: 1050;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* Smooth fade-in transition */
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* Triangle pointer for tooltip */
+.tooltip-custom .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1a1a2e transparent transparent transparent;
+}
+
+/* Hover triggers */
+.tooltip-custom:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(-2px);
+}
