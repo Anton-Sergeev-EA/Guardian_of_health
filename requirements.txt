@@ -1,0 +1,30 @@
+# Core.
+numpy==1.26.3
+opencv-python==4.9.0.80
+mediapipe==0.10.8
+pybind11==2.11.1
+
+# UI.
+PyQt6==6.6.0
+plyer==0.9.0
+
+# Web.
+Flask==3.0.0
+Flask-SocketIO==5.3.6
+Flask-CORS==4.0.0
+python-socketio==5.10.0
+eventlet==0.34.2
+
+# Voice.
+vosk==0.3.45
+pyaudio==0.2.11
+pyttsx3==2.90
+
+# Data & Visualization.
+pandas==2.1.4
+matplotlib==3.8.2
+rich==13.7.0
+
+# Build.
+setuptools==69.0.2
+wheel==0.42.0
