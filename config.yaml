@@ -1,0 +1,65 @@
+# Guardian of health Configuration File
+
+app:
+  name: "FocusGuardian"
+  version: "2.0.0"
+  debug: false
+  log_level: "INFO"
+
+camera:
+  id: 0
+  width: 640
+  height: 480
+  fps: 30
+  backend: "auto"  # Supported: auto, v4l2, directshow, msmf.
+
+analytics:
+  posture:
+    slouch_threshold: 15.0  # Deviation angle in degrees to trigger slouching.
+    critical_threshold: 25.0 # Angle triggering critical warning.
+    smoothing_window: 5     # Rolling average window size for noise reduction.
+  eye:
+    ear_threshold: 0.2      # Eye Aspect Ratio threshold (below is closed).
+    blink_threshold: 0.25   # Time threshold in seconds to count as a blink.
+    smoothing_window: 3     # Rolling window for eye landmark detection.
+  fatigue:
+    break_interval: 45      # Session length limit before break warning (minutes).
+    max_blinks_per_minute: 20
+    max_slouches_per_minute: 5
+
+voice:
+  enabled: true
+  language: "ru"
+  cooldown: 1.5            # Prevention duration between verbal triggers (seconds).
+  model_path: "src/voice/models/vosk-model-small-ru-0.22"
+
+web:
+  enabled: true
+  host: "0.0.0.0"
+  port: 5000
+  cors_origins: ["*"]
+  secret_key: "change-this-in-production"
+  stream:
+    enabled: true
+    quality: 75            # MJPEG compression quality (1-100).
+    frame_skip: 2          # Process every Nth frame to preserve CPU resources.
+
+database:
+  enabled: true
+  # Absolute path inside the container to align with docker-compose volumes mount point.
+  path: "/home/guardian/.focus_guardian/logs.db"
+  retention_days: 30
+
+notifications:
+  enabled: true
+  cooldown: 60             # Suppress repeated alerts within this window (seconds).
+  sound: true              # Audible buzzer warning.
+  desktop: true            # System tray notification toast.
+
+logging:
+  level: "INFO"
+  format: "json"           # Format types: json, text.
+  # Aligned path to write logs inside the shared persistence mount directory.
+  file: "/home/guardian/.focus_guardian/guardian.log"
+  max_size: 10             # Log rotation trigger size (MB).
+  backup_count: 5          # Number of rotated log files to retain.
