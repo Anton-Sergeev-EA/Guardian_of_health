@@ -13,9 +13,18 @@ import mediapipe as mp
 
 # ==================== ИНИЦИАЛИЗАЦИЯ ====================
 print("📷 Запуск камеры...")
-cap = cv2.VideoCapture(1)
-if not cap.isOpened():
-    print("❌ Камера не открылась")
+# Автоматический поиск камеры
+cap = None
+for i in range(5):
+    test = cv2.VideoCapture(i)
+    if test.isOpened():
+        cap = test
+        print(f"✅ Камера {i} работает")
+        break
+    test.release()
+
+if cap is None:
+    print("❌ Камера не найдена")
     exit(1)
 
 print("🧠 Загрузка MediaPipe...")

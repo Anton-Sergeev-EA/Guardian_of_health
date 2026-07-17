@@ -3,7 +3,19 @@ import cv2
 import time
 
 app = Flask(__name__)
-cap = cv2.VideoCapture(2)
+# Автоматический поиск камеры
+cap = None
+for i in range(5):
+    test = cv2.VideoCapture(i)
+    if test.isOpened():
+        cap = test
+        print(f"✅ Камера {i} работает")
+        break
+    test.release()
+
+if cap is None:
+    print("❌ Камера не найдена")
+    exit(1)
 
 @app.route('/')
 def index():
