@@ -8,8 +8,8 @@ from typing import Optional, List
 from collections import deque
 
 # Import metrics for type hinting.
-from eye_tracker import EyeMetrics
-from posture_analyzer import PostureMetrics
+from .eye_tracker import EyeMetrics
+from .posture_analyzer import PostureMetrics
 
 
 @dataclass

@@ -80,31 +80,30 @@ public:
         std::lock_guard<std::mutex> lock(mtx);
         
         if (frame_rgb.empty()) {
-            // Return a fallback black frame if no data has been captured yet.
-            cv::Mat black = cv::Mat::zeros(height, width, CV_8UC3);
+            // Возвращаем чёрный кадр, если нет данных
+            cv::Mat black(height, width, CV_8UC3, cv::Scalar(0, 0, 0));
             return py::array_t<uint8_t>(
-                {height, width, 3},
-                {static_cast<py::ssize_t>(width * 3), 3, 1},
-                black.data
+                py::buffer_info(
+                    black.data,                              // pointer to data
+                    sizeof(uint8_t),                         // size of item
+                    py::format_descriptor<uint8_t>::format(), // python struct-style format
+                    3,                                       // number of dimensions
+                    { (size_t)height, (size_t)width, (size_t)3 }, // shape
+                    { (size_t)width * 3, (size_t)3, (size_t)1 }   // strides
+                )
             );
         }
         
-        // Safe Zero-Copy: Create a heap-allocated copy of the cv::Mat header.
-        // This increments OpenCV's internal reference counter for the pixel buffer.
-        // The capsule ensures the memory is released only when Python garbage-collects the numpy array.
-        auto* kept_alive_frame = new cv::Mat(frame_rgb);
-        
-        auto capsule = py::capsule(kept_alive_frame, [](void* ptr) noexcept {
-            delete reinterpret_cast<cv::Mat*>(ptr);
-        });
-        
+        // Zero-copy: возвращаем view на данные
         return py::array_t<uint8_t>(
-            {kept_alive_frame->rows, kept_alive_frame->cols, 3},
-            {static_cast<py::ssize_t>(kept_alive_frame->step[0]), 
-             static_cast<py::ssize_t>(kept_alive_frame->step[1]), 
-             static_cast<py::ssize_t>(kept_alive_frame->step[2])},
-            kept_alive_frame->data,
-            capsule
+            py::buffer_info(
+                frame_rgb.data,                              // pointer to data
+                sizeof(uint8_t),                             // size of item
+                py::format_descriptor<uint8_t>::format(),    // python struct-style format
+                3,                                           // number of dimensions
+                { (size_t)height, (size_t)width, (size_t)3 }, // shape
+                { (size_t)width * 3, (size_t)3, (size_t)1 }   // strides
+            )
         );
     }
     

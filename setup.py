@@ -78,7 +78,7 @@ elif sys.platform == 'darwin':
     else:
         include_dirs.append('/opt/homebrew/include/opencv4') # Apple Silicon fallback.
         include_dirs.append('/usr/local/include/opencv4')     # Intel fallback
-        .
+        
     if pkg_libs:
         library_dirs.extend([path[2:] for path in pkg_libs]) # Strip '-L' prefix.
     else:

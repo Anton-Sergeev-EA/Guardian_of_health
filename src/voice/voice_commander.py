@@ -10,7 +10,7 @@ import queue
 from pathlib import Path
 from typing import Optional, Callable, Dict, Any, Tuple
 
-from commands import CommandRegistry, VoiceCommand
+from .commands import CommandRegistry, VoiceCommand
 
 # Vosk imports with safe fallback.
 try:
