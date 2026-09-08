@@ -184,10 +184,14 @@ Examples:
             height=args.height,
             enable_voice=not args.no_voice
         )
-        
-        # Start core background camera loop.
-        capture_thread = threading.Thread(target=guardian.capture_loop, daemon=True)
-        capture_thread.start()
+        # FocusGuardian.__init__ already spawns and starts the capture,
+        # processing, and DB-writer threads itself via _start_threads() -
+        # a second `threading.Thread(target=guardian.capture_loop, ...)`
+        # used to be started here on top of that, running two concurrent
+        # capture loops against the same VideoEngine and doubling the
+        # MediaPipe inference load for no reason (visible as "[LOOP]
+        # Starting capture..." printing twice and duplicate TFLite
+        # interpreter warnings on every run).
         logger.info("Guardian camera analytics thread started.")
         
     except Exception as e:
