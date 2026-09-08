@@ -34,12 +34,12 @@ class CommandRegistry:
                 'en': ['status', 'state', 'what\'s up', 'how are you', 'info']
             },
             VoiceCommand.PAUSE: {
-                'ru': ['пауза', 'стоп', 'останови', 'перестань', 'тихо'],
+                'ru': ['пауза', 'паузу', 'стоп', 'останови', 'перестань', 'тихо'],
                 'en': ['pause', 'stop', 'hold', 'quiet', 'freeze']
             },
             VoiceCommand.RESUME: {
                 'ru': ['продолжить', 'возобновить', 'дальше', 'включи', 'запусти'],
-                'en': ['resume', 'continue', 'go on', 'start', 'proceed']
+                'en': ['resume', 'start', 'proceed']
             },
             VoiceCommand.REPORT: {
                 'ru': ['отчет', 'статистика', 'итоги', 'покажи отчет', 'результаты'],
@@ -63,7 +63,7 @@ class CommandRegistry:
             },
             VoiceCommand.BREAK: {
                 'ru': ['перерыв', 'отдых', 'сделай перерыв', 'отдохнуть'],
-                'en': ['break', 'rest', 'take a break', 'pause']
+                'en': ['break', 'rest', 'take a break']
             },
             VoiceCommand.CONTINUE: {
                 'ru': ['продолжай', 'работать', 'продолжить работу', 'работаем'],
@@ -80,11 +80,21 @@ class CommandRegistry:
         }
         
         # Build flat list for faster lookup.
-        self._flat_lookup = {}
+        # Any phrase must map to exactly one command: two commands quietly sharing
+        # a trigger word is exactly the class of bug that let "pause" silently
+        # resolve to BREAK instead of PAUSE, so we fail fast at construction time.
+        self._flat_lookup: Dict[str, VoiceCommand] = {}
         for cmd, lang_dict in self._commands.items():
             for phrases in lang_dict.values():
                 for phrase in phrases:
-                    self._flat_lookup[phrase.lower()] = cmd
+                    key = phrase.lower()
+                    existing = self._flat_lookup.get(key)
+                    if existing is not None and existing is not cmd:
+                        raise ValueError(
+                            f"Voice command phrase {key!r} is registered to both "
+                            f"{existing.name} and {cmd.name} - trigger phrases must be unique."
+                        )
+                    self._flat_lookup[key] = cmd
     
     def parse_command(self, text: str) -> Tuple[Optional[VoiceCommand], float]:
         """
