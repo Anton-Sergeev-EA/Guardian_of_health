@@ -82,6 +82,19 @@ class TestPostureAnalyzer(unittest.TestCase):
         self.assertTrue(result.is_slouching)
         self.assertEqual(result.severity, 'critical')
 
+    def test_is_slouching_is_a_native_bool(self):
+        """
+        is_slouching is compared from np.mean(...), which yields numpy.bool_
+        rather than a real Python bool unless explicitly cast. That's not a
+        problem for truthiness checks in Python, but json.dumps() (used by
+        Flask's jsonify() in the web dashboard's /api/status endpoint) raises
+        TypeError on numpy.bool_ - confirmed by actually hitting that
+        endpoint and getting a 500, not just by reading the type hint.
+        """
+        landmarks = self._create_mock_landmarks(angle=30.0)
+        result = self.analyzer.analyze(landmarks)
+        self.assertIsInstance(result.is_slouching, bool)
+
     def _create_mock_landmarks(self, angle: float):
         """
         Create mock MediaPipe-like landmark structures tilted by `angle` degrees

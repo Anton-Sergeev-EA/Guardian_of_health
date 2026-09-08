@@ -111,7 +111,12 @@ class PostureAnalyzer:
             avg_confidence = np.mean(self.confidence_history)
             
             # Determining the state of posture.
-            is_slouching = smoothed_angle > self.slouch_threshold
+            # np.mean() returns numpy.float64, so this comparison yields
+            # numpy.bool_ rather than a real Python bool - harmless for the
+            # dataclass field itself, but json.dumps() (used by Flask's
+            # jsonify() in the web dashboard's /api/status endpoint) raises
+            # TypeError on numpy.bool_, so it has to be a native bool here.
+            is_slouching = bool(smoothed_angle > self.slouch_threshold)
             
             if smoothed_angle > self.critical_threshold:
                 severity = 'critical'
