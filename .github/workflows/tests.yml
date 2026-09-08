@@ -1,0 +1,33 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # The unit tests exercise src/analytics and src/voice in isolation and
+      # only need numpy + PyYAML + pytest - not the full desktop/vision stack
+      # (mediapipe, opencv, PyQt6, vosk, ...), which needs a display/webcam and
+      # doesn't belong in a headless CI runner. Keeping this install minimal is
+      # what makes it possible to actually run these tests in CI at all.
+      - name: Install test dependencies
+        run: pip install numpy PyYAML pytest
+
+      - name: Run unit tests
+        run: pytest tests/ -v
