@@ -56,6 +56,14 @@ packages = ["src", "src.core", "src.analytics", "src.voice", "src.ui", "src.web"
 [tool.setuptools.package-data]
 "*" = ["*.cpp", "*.html", "*.css", "*.js"]
 
+[tool.pytest.ini_options]
+# Without this, running the bare `pytest` command (as opposed to
+# `python -m pytest`, which prepends the cwd to sys.path itself) fails
+# every test module with "ModuleNotFoundError: No module named 'src'",
+# because pytest's default import mode only puts each test file's own
+# directory on sys.path, not the project root. This is also what CI runs.
+pythonpath = ["."]
+
 # Code Quality Tooling Configurations.
 
 [tool.black]
