@@ -1,10 +1,14 @@
-# Guardian of Health.
+# Guardian of Health
+
+[Русская версия](README.ru.md)
+
 A local, private AI assistant that analyzes your webcam video stream in real-time to prevent digital 
 fatigue (eye strain, slouching) and burnout without sending your video to the cloud.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+[![Tests](https://github.com/Anton-Sergeev-EA/Guardian_of_health/actions/workflows/tests.yml/badge.svg)](https://github.com/Anton-Sergeev-EA/Guardian_of_health/actions/workflows/tests.yml)
 
 ---
 ## Features.
@@ -36,21 +40,31 @@ venv\Scripts\activate         # On Windows
 # 3. Install dependencies.
 pip install -r requirements.txt
 # 4. Run the application.
-python guardian_final_working.py
+python main.py --web
 
 # Usage.
-1. Open your browser and go to http://localhost:5000.
+1. Open your browser and go to http://localhost:5000 (or run without --web for console-only mode).
 2. Allow camera access when prompted.
 3. Sit in front of your webcam.
 4. View your posture angle and slouch count in real-time.
 
-# Available Versions.
-File	                      Description	                                        Command
-guardian_final_working.py	  Full ML version — posture analysis + notifications	python guardian_final_working.py
-guardian_web.py	              ML version with web interface	                        python guardian_web.py
-start.py	                  Simple video stream (no ML)	                        python start.py
-final_video.py	              Minimal video stream	                                python final_video.py
-main.py	                      CLI with arguments (--web, --status, etc.)	        python main.py --web
+# Command-line options.
+main.py is the single entry point. Key flags:
+
+Flag	                Description
+--web	                Enable the web interface (http://<host>:<port>)
+--host / --port	        Web server bind address (default 0.0.0.0:5000)
+--cam	                Camera device ID (default 0)
+--width / --height	    Camera resolution (default 640x480)
+--no-voice	            Disable voice commands
+--no-tray	            Disable the system tray icon
+--status	            Print current status once and exit
+--perf	                Show performance stats
+--daemon {install,uninstall,status}	Manage the background service
+--config	            Path to config file (default config.yaml)
+--test	                Run the test suite
+
+Run `python main.py --help` for the full list.
 
 # Screenshots.
 Web Interface
@@ -97,6 +111,13 @@ camera:
 - pyyaml — configuration.
 - pytest — testing.
 Full list: requirements.txt.
+
+# Development.
+Run the test suite before opening a PR:
+
+pytest tests/ -v
+
+CI runs this automatically on every push via GitHub Actions (see the badge above).
 
 # Contributing.
 1. Fork the repository.

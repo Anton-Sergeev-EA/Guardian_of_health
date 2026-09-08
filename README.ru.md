@@ -1,10 +1,13 @@
 # Guardian of Health
 
+[English version](README.md)
+
 Локальный, приватный AI-ассистент, который анализирует видеопоток с вашей веб-камеры в реальном времени для предотвращения цифровой усталости (напряжения глаз, сутулости) и выгорания без отправки вашего видео в облако.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)]()
+[![Tests](https://github.com/Anton-Sergeev-EA/Guardian_of_health/actions/workflows/tests.yml/badge.svg)](https://github.com/Anton-Sergeev-EA/Guardian_of_health/actions/workflows/tests.yml)
 
 ---
 ## Возможности
@@ -36,20 +39,30 @@ venv\Scripts\activate         # На Windows
 # 3. Установите зависимости
 pip install -r requirements.txt
 # 4. Запустите приложение
-python guardian_final_working.py
+python main.py --web
 # 5.Использование.
-- Откройте браузер и перейдите по адресу http://localhost:5000
+- Откройте браузер и перейдите по адресу http://localhost:5000 (либо запустите без --web для консольного режима).
 - Разрешите доступ к камере при запросе.
 - Сядьте перед веб-камерой.
 - Наблюдайте за углом осанки и счётчиком сутулостей в реальном времени.
 
-# Доступные версии.
-Файл	                    Описание	                                      Команда
-guardian_final_working.py	Полная ML-версия — анализ осанки + уведомления	  python guardian_final_working.py
-guardian_web.py	            ML-версия с веб-интерфейсом	                      python guardian_web.py
-start.py	                Простой видеопоток (без ML)	                      python start.py
-final_video.py	            Минимальный видеопоток	                          python final_video.py
-main.py	                    CLI с аргументами (--web, --status и др.)	      python main.py --web
+# Параметры командной строки.
+main.py — единая точка входа. Основные флаги:
+
+Флаг	                Описание
+--web	                Включить веб-интерфейс (http://<host>:<port>)
+--host / --port	        Адрес веб-сервера (по умолчанию 0.0.0.0:5000)
+--cam	                ID камеры (по умолчанию 0)
+--width / --height	    Разрешение камеры (по умолчанию 640x480)
+--no-voice	            Отключить голосовые команды
+--no-tray	            Отключить иконку в системном трее
+--status	            Показать статус один раз и выйти
+--perf	                Показать статистику производительности
+--daemon {install,uninstall,status}	Управление фоновой службой
+--config	            Путь к файлу конфигурации (по умолчанию config.yaml)
+--test	                Запустить тесты
+
+Полный список флагов: `python main.py --help`.
 
 # Скриншоты.
 Веб-интерфейс
@@ -95,6 +108,13 @@ camera:
 - pyyaml — конфигурация.
 - pytest — тестирование.
 Полный список: requirements.txt
+
+# Разработка.
+Перед тем как открыть Pull Request, запустите тесты:
+
+pytest tests/ -v
+
+CI запускает их автоматически при каждом push через GitHub Actions (см. значок выше).
 
 # Участие в разработке.
 - Сделайте форк репозитория.
