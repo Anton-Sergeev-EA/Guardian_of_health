@@ -8,6 +8,7 @@ import os
 import argparse
 import threading
 import subprocess
+import signal
 import time
 from pathlib import Path
 from rich.console import Console
@@ -257,6 +258,15 @@ Examples:
                 tray = TrayApp(guardian, web_port=args.port if args.web else None)
                 console.print("[green]System tray active[/green]")
                 console.print("[dim]Press Ctrl+C inside terminal to quit[/dim]")
+                
+                # Qt's C++ event loop (app.exec()) never returns control to the
+                # Python interpreter, so Python's default SIGINT handling can't
+                # fire - Ctrl+C is silently swallowed and the process just hangs.
+                # Installing an explicit handler that calls app.quit() lets the
+                # existing 1s QTimer heartbeat (see TrayApp) notice the signal
+                # and cleanly exit app.exec(), so the try/finally cleanup below
+                # (guardian.stop(), web_server.stop()) still runs normally.
+                signal.signal(signal.SIGINT, lambda *_: app.quit())
                 
                 # Execute Qt loop
                 sys.exit(app.exec())
