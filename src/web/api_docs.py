@@ -46,13 +46,12 @@ OPENAPI_SPEC = {
         "version": "2.0.0",
         "description": "AI Health Assistant API for posture and eye fatigue monitoring",
         "contact": {
-            "name": "FocusGuardian Team",
-            "email": "team@focusguardian.ai"
+            "name": "Anton Sergeev",
+            "email": "avsergeev1981@gmail.com"
         }
     },
     "servers": [
-        {"url": "http://localhost:5000", "description": "Local development"},
-        {"url": "https://api.focusguardian.ai", "description": "Production"}
+        {"url": "http://localhost:5000", "description": "Local development"}
     ],
     "paths": {
         "/api/status": {

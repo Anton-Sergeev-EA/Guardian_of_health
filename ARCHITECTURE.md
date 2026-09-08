@@ -60,4 +60,4 @@ Webcam → OpenCV → MediaPipe Pose → Angle Calculation → Slouch Detection 
 
 ## License
 
-MIT © Sergeev Anton Valentinovich (kavery@mail.ru)
+MIT © Sergeev Anton Valentinovich (avsergeev1981@gmail.com)

@@ -109,7 +109,7 @@ Full list: requirements.txt.
 Distributed under the MIT License.
 
 Author: Sergeev Anton Valentinovich
-Email: kavery@mail.ru
+Email: avsergeev1981@gmail.com
 
 # Disclaimer.
 This application is for informational and wellness purposes only. It is not a medical device and should not be used as a substitute for professional medical advice, diagnosis, or treatment.
