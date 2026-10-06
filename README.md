@@ -1,9 +1,15 @@
 # Guardian of Health
 
+> **Completed experimental prototype; active maintenance has ended.**
+> Preserved as a computer-vision experiment. Unit tests cover geometry and command
+> handling; they do not validate real-camera accuracy, health outcomes or all platforms.
+> Current engineering work: [GridGuard](https://github.com/Anton-Sergeev-EA/GridGuard).
+
 [Русская версия](README.ru.md)
 
-A local, private AI assistant that analyzes your webcam video stream in real-time to prevent digital 
-fatigue (eye strain, slouching) and burnout without sending your video to the cloud.
+A local webcam prototype for pose estimation, geometric posture indicators and
+reminders. It has not been clinically evaluated and does not establish prevention
+of eye strain, fatigue or burnout. It is not a medical diagnostic tool.
 
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
@@ -16,7 +22,8 @@ fatigue (eye strain, slouching) and burnout without sending your video to the cl
 - AI-powered pose estimation — MediaPipe detects 33 body keypoints.
 - Posture angle calculation — measures slouching in real-time.
 - Smart notifications — alerts when you slouch (console + visual).
-- 100% private — all processing is done locally, no data leaves your computer.
+- Local video-processing design; an independent privacy/security audit was not performed.
+  Review optional voice/web components and network exposure before use.
 - Web interface — view your posture stats in any browser.
 - Voice commands (optional) — control the app hands-free.
 - Slouch counter — track how many times you've slouched.
